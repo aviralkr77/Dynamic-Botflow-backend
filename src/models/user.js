@@ -49,25 +49,20 @@ userSchema.pre('save', function (next) {
         next();
     }
 });
-userSchema.methods.comparepassword = function (password, cb) {
-    bcrypt.compare(password, this.password, function (err, isMatch) {
-        if (err) return cb(next);
-        cb(null, isMatch);
-    });
-}
+userSchema.methods.comparepassword = async function (password) {
+    return bcrypt.compare(password, this.password);
+};
 
 
 // find by token
-userSchema.statics.findByToken = function (token, cb) {
-    var user = this;
-
-    jwt.verify(token, config.SECRET, function (err, decode) {
-
-        user.findOne({ "_id": decode, "token": token }, function (err, user) {
-            if (err) return cb(err);
-            cb(null, user);
-        })
-    })
+userSchema.statics.findByToken = async function (token) {
+    const decoded = await new Promise((resolve, reject) => {
+        jwt.verify(token, config.SECRET, (err, decode) => {
+            if (err) reject(err);
+            else resolve(decode);
+        });
+    });
+    return this.findOne({ _id: decoded, token });
 };
 
 
